@@ -23,35 +23,27 @@ export async function getProducts(req, res) {
 
     const db = await getDBConnection()
 
-    let query = 'SELECT * FROM products'
-    let params = []
-
     const { genre, search } = req.query
 
-    if(genre && search){
-      query = 'SELECT * FROM products WHERE genre = ? AND (title LIKE ? OR artist LIKE ? OR genre LIKE ?)'
-      
-      params.push(genre,`%${search}%`,`%${search}%`, `%${search}%`)
-    }
+    let query = 'SELECT * FROM products'
+    let conditions = []
+    let params = []
 
     if (genre) {
-      query = 'SELECT * FROM products WHERE genre = ?'
+      conditions.push('genre = ?')
       params.push(genre)
     }
 
-    if(search){
-      query = 'SELECT * FROM products WHERE title LIKE ? OR artist LIKE ? OR genre LIKE ?'
-      params.push(`%${search}%`,`%${search}%`,`%${search}%`)
+    if (search) {
+      conditions.push('(title LIKE ? OR artist LIKE ? OR genre LIKE ?)')
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`)
     }
-/*
-Challenge:
 
-1. When the user inputs text into the search box, that text will be passed to the server as a query string. We should serve products where the search text finds a match with the title, artist, or genre. We are accepting partial matching queries, so "lo" would match with "block" and "slow" and "allow".
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
 
-hint.md for help!
 
-Example incoming query: '?search=lo'
-*/
     const products = await db.all(query, params)
 
     res.json(products)
